@@ -4,10 +4,10 @@ import logging.handlers
 import re
 import getpass
 from datetime import datetime
+import pickle
 
 try:
     import requests
-    import pickle
     import vat.vectra as vectra
     from config import cognito_brain, cognito_token, server, port, absolute_path
 except ImportError as error:
