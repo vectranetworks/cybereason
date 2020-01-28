@@ -200,18 +200,6 @@ def gen_token():
 
 @validate_config
 def main():
-    parser = argparse.ArgumentParser(description='Poll Cognito for tagged hosts, extracts Cybereason contextual '
-                                                 'information.  Block or unblock hosts per tags',
-                                     prefix_chars='--', formatter_class=argparse.RawTextHelpFormatter,
-                                     epilog='')
-    parser.add_argument('--token', action='store_true', help='Generate Cybereason API token.  Prompts for credentials.')
-    parser.add_argument('--tc', type=int, nargs=2, default=False,
-                        help='Poll for hosts with threat and certainty scores >=, eg --tc 50 50')
-    parser.add_argument('--tag', type=str, nargs=1, default=False, help='Enrichment host tag to search for')
-    parser.add_argument('--blocktag', type=str, nargs=1, default=False, help='Block hosts with this tag')
-    parser.add_argument('--unblocktag', type=str, nargs=1, default=False, help='Unblock hosts with this tag')
-    args = parser.parse_args()
-
     if args.token:
         gen_token()
 
@@ -255,5 +243,17 @@ if __name__ == '__main__':
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     syslog_logger.addHandler(handler)
+    
+    parser = argparse.ArgumentParser(description='Poll Cognito for tagged hosts, extracts Cybereason contextual '
+                                                 'information.  Block or unblock hosts per tags',
+                                     prefix_chars='--', formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog='')
+    parser.add_argument('--token', action='store_true', help='Generate Cybereason API token.  Prompts for credentials.')
+    parser.add_argument('--tc', type=int, nargs=2, default=False,
+                        help='Poll for hosts with threat and certainty scores >=, eg --tc 50 50')
+    parser.add_argument('--tag', type=str, nargs=1, default=False, help='Enrichment host tag to search for')
+    parser.add_argument('--blocktag', type=str, nargs=1, default=False, help='Block hosts with this tag')
+    parser.add_argument('--unblocktag', type=str, nargs=1, default=False, help='Unblock hosts with this tag')
+    args = parser.parse_args()
 
     main()
