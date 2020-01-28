@@ -5,7 +5,7 @@ PORT = '8443'
 
 
 # Vectra config
-COGNITO_BRAIN = 'https://<cognito detect>'
+COGNITO_BRAIN = 'https://<cognito.example.com>'
 COGNITO_TOKEN = '<cognito detect api token>'
 
 
