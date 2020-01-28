@@ -8,37 +8,36 @@ import pickle
 
 try:
     import requests
+    import validators
     import vat.vectra as vectra
-    from config import cognito_brain, cognito_token, server, port, absolute_path
-except ImportError as error:
+    from config import COGNITO_BRAIN, COGNITO_TOKEN, SERVER, PORT, ABSOLUTE_PATH
+except Exception as error:
     print("\nMissing import requirements: %s\n" % str(error))
 
 # Cybereason base URL
-base_url = "https://" + server + ":" + port
+BASE_URL = "https://" + SERVER + ":" + PORT
 
 # Cybereason Request URIs
-endpoint_uri = '/rest/visualsearch/query/simple'
-sensor_uri = '/rest/sensors/query'
-sensor_isolation_uri = '/rest/settings/isolation-rule'
-sensor_isolation_delete_uri = sensor_isolation_uri + '/delete'
-
-parser = argparse.ArgumentParser(description='Poll Cognito for tagged hosts, extracts Cybereason contextual '
-                                             'information.  Block or unblock hosts per tags',
-                                 prefix_chars='--', formatter_class=argparse.RawTextHelpFormatter,
-                                 epilog='')
-parser.add_argument('--token', action='store_true', help='Generate Cybereason API token.  Prompts for credentials.')
-parser.add_argument('--tc', type=int, nargs=2, default=False,
-                    help='Poll for hosts with threat and certainty scores >=, eg --tc 50 50')
-parser.add_argument('--tag', type=str, nargs=1, default=False, help='Enrichment host tag to search for')
-parser.add_argument('--blocktag', type=str, nargs=1, default=False, help='Block hosts with this tag')
-parser.add_argument('--unblocktag', type=str, nargs=1, default=False, help='Unblock hosts with this tag')
-args = parser.parse_args()
+ENDPOINT_URI = '/rest/visualsearch/query/simple'
+SENSOR_URI = '/rest/sensors/query'
+SENSOR_ISOLATION_URI = '/rest/settings/isolation-rule'
+SENSOR_ISOLATION_DELETE_URI = SENSOR_ISOLATION_URI + '/delete'
 
 # Setup Vectra client
-vc = vectra.VectraClient(cognito_brain, token=cognito_token)
+VC = vectra.VectraClient(COGNITO_BRAIN, token=COGNITO_TOKEN)
 
 # Suppress Detect certificate warning
 requests.packages.urllib3.disable_warnings()
+
+
+def validate_config(func):
+    def config_validator():
+        if bool(validators.url(COGNITO_BRAIN) and validators.url(BASE_URL)):
+            return func()
+        else:
+            raise Exception('Ensure config.py has valid Cybereason and Vectra config')
+
+    return config_validator
 
 
 def query_cr(url, query_json, method):
@@ -46,7 +45,7 @@ def query_cr(url, query_json, method):
     # Establish session and import auth cookie
     session = requests.session()
 
-    with open(absolute_path + 'cr_cookie', 'rb') as infile:
+    with open(ABSOLUTE_PATH + 'cr_cookie', 'rb') as infile:
         session.cookies.update(pickle.load(infile))
 
     api_headers = {'Content-Type': 'application/json'}
@@ -87,7 +86,7 @@ def query_sensor_by_ip(ip):
             }
         ]
     }
-    results_dict = query_cr(base_url + sensor_uri, ip_query, 'POST')
+    results_dict = query_cr(BASE_URL + SENSOR_URI, ip_query, 'POST')
 
     return results_dict
 
@@ -95,7 +94,7 @@ def query_sensor_by_ip(ip):
 def gen_sensor_tags(sensor_dict, hostid):
     # Returns a list of tags from CR context including any previous block/unblock action tags
     # Pull host's tags
-    host_tags = vc.get_host_tags(host_id=hostid).json()['tags']
+    host_tags = VC.get_host_tags(host_id=hostid).json()['tags']
 
     print('Host tags:{}'.format(host_tags))
 
@@ -133,7 +132,7 @@ def gen_sensor_tags(sensor_dict, hostid):
 
 
 def query_isolation_by_ip(ip):
-    isolation_rule_full_list = query_cr(base_url + sensor_isolation_uri, None, 'GET')
+    isolation_rule_full_list = query_cr(BASE_URL + SENSOR_ISOLATION_URI, None, 'GET')
     # Returns list of isolation rules that match IP
     return [r for r in isolation_rule_full_list if r['ipAddressString'] == ip]
 
@@ -146,7 +145,7 @@ def create_isolation_by_ip(ip):
         "blocking": "true",
         "direction": "ALL"
     }
-    results = query_cr(base_url + sensor_isolation_uri, isolation, 'POST')
+    results = query_cr(BASE_URL + SENSOR_ISOLATION_URI, isolation, 'POST')
     syslog_logger.info('Created isolation rule:{}'.format(results))
 
 
@@ -156,7 +155,7 @@ def delete_isolation_by_ip(ip):
     if len(delete_list):
         for rule in delete_list:
             syslog_logger.info('Deleting isolation rule:{}'.format(rule))
-            query_cr(base_url + sensor_isolation_delete_uri, rule, 'POST')
+            query_cr(BASE_URL + SENSOR_ISOLATION_DELETE_URI, rule, 'POST')
     else:
         syslog_logger.info('No isolation rule found to delete for IP:{}'.format(ip))
 
@@ -165,13 +164,13 @@ def poll_vectra(tag=None, tc=None):
     #  Supplied with tag and/or threat/certainty scores, returns dict of host_id:IP
     host_dict = {}
     if tag:
-        tagged_hosts = vc.get_hosts(state='active', tags=tag).json()['results']
+        tagged_hosts = VC.get_hosts(state='active', tags=tag).json()['results']
         for host in tagged_hosts:
             host_dict.update({host['id']: host['last_source']})
     if tc:
         #  t, c = args.tc.split()
         t, c = args.tc[0], args.tc[1]
-        tc_hosts = vc.get_hosts(state='active', threat_gte=int(t), certainty_gte=int(c)).json()['results']
+        tc_hosts = VC.get_hosts(state='active', threat_gte=int(t), certainty_gte=int(c)).json()['results']
         for host in tc_hosts:
             host_dict.update({host['id']: host['last_source']})
     return host_dict
@@ -188,7 +187,7 @@ def gen_token():
         "password": passw
     }
 
-    login_url = base_url + "/login.html"
+    login_url = BASE_URL + "/login.html"
 
     session = requests.session()
     response = session.post(login_url, data=data, verify=True)
@@ -199,7 +198,19 @@ def gen_token():
         pickle.dump(session.cookies, outfile)
 
 
+@validate_config
 def main():
+    parser = argparse.ArgumentParser(description='Poll Cognito for tagged hosts, extracts Cybereason contextual '
+                                                 'information.  Block or unblock hosts per tags',
+                                     prefix_chars='--', formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog='')
+    parser.add_argument('--token', action='store_true', help='Generate Cybereason API token.  Prompts for credentials.')
+    parser.add_argument('--tc', type=int, nargs=2, default=False,
+                        help='Poll for hosts with threat and certainty scores >=, eg --tc 50 50')
+    parser.add_argument('--tag', type=str, nargs=1, default=False, help='Enrichment host tag to search for')
+    parser.add_argument('--blocktag', type=str, nargs=1, default=False, help='Block hosts with this tag')
+    parser.add_argument('--unblocktag', type=str, nargs=1, default=False, help='Unblock hosts with this tag')
+    args = parser.parse_args()
 
     if args.token:
         gen_token()
@@ -212,7 +223,7 @@ def main():
                 create_isolation_by_ip(hosts[hostid])
                 tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
                 tag_list.append('Manual block:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
-                vc.set_host_tags(host_id=hostid, tags=tag_list, append=False)
+                VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
 
         if args.unblocktag:
             hosts = poll_vectra(args.unblocktag)
@@ -221,7 +232,7 @@ def main():
                 delete_isolation_by_ip(hosts[hostid])
                 tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
                 tag_list.append('Manual unblock:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
-                vc.set_host_tags(host_id=hostid, tags=tag_list, append=False)
+                VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
 
         # Pull hosts with tags and/or threat and certainty scores
         hosts = poll_vectra(args.tag, args.tc)
@@ -230,14 +241,7 @@ def main():
             syslog_logger.info('Pulling enrichment tags for hostid:IP {}:{}'.format(hostid, hosts[hostid]))
             tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
 
-            vc.set_host_tags(host_id=hostid, tags=tag_list, append=False)
-
-        # sens_dict = query_sensor_by_ip('172.16.1.106')
-        # tags = gen_sensor_tags(sens_dict)
-        # print(tags)
-        # print(query_isolation_by_ip('192.168.36.128'))
-        # create_isolation_by_ip('172.16.1.106')
-        # delete_isolation_by_ip('172.16.1.106')
+            VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
 
 
 if __name__ == '__main__':

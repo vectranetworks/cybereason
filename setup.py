@@ -8,7 +8,7 @@ setuptools.setup(
     description="Cybereason API to Cognito Detect API integration",
     url="https://github.com/vectranetworks/cybereason",
     packages=setuptools.find_packages(),
-    install_requires=['vectra-api-tools', 'requests'],
+    install_requires=['vectra-api-tools', 'requests', 'validators'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

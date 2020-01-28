@@ -1,13 +1,13 @@
 
 # Cybereason config
-server = '<>.cybereason.net'
-port = '8443'
+SERVER = '<instance name>.cybereason.net'
+PORT = '8443'
 
 
 # Vectra config
-cognito_brain = 'https://<cognito detect>'
-cognito_token = '<cognito detect api token>'
+COGNITO_BRAIN = 'https://<cognito detect>'
+COGNITO_TOKEN = '<cognito detect api token>'
 
 
 # Environment path to directory containing cybereason script.  Required to support cron jobs
-absolute_path = '/<path>/cybereason/'
+ABSOLUTE_PATH = '/<path>/cybereason/'
