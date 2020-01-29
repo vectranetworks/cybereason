@@ -19,8 +19,8 @@ setuptools.setup(
         "Topic :: Security"
     ],
     entry_points={
-          'cybereason': [
-            'cybereason = cybereason.cybereason:cybereason',
+          'console_scripts': [
+            'cybereason = cybereason.cybereason:main',
           ],
     },
     python_requires='>=3.5',
