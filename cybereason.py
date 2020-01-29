@@ -1,3 +1,8 @@
+__title__ = 'Cybereason scripted integration'
+__version__ = '1.0'
+__copyright__ = 'Vectra AI, Inc.'
+__status__ = 'Production'
+
 import json
 import argparse
 import logging.handlers
@@ -243,7 +248,7 @@ if __name__ == '__main__':
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     syslog_logger.addHandler(handler)
-    
+
     parser = argparse.ArgumentParser(description='Poll Cognito for tagged hosts, extracts Cybereason contextual '
                                                  'information.  Block or unblock hosts per tags',
                                      prefix_chars='--', formatter_class=argparse.RawTextHelpFormatter,
