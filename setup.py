@@ -18,5 +18,10 @@ setuptools.setup(
         "Operating System :: OS Independent",
         "Topic :: Security"
     ],
+    entry_points={
+          'cybereason': [
+            'cybereason = cybereason.cybereason:cybereason',
+          ],
+    },
     python_requires='>=3.5',
 )
