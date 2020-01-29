@@ -1,5 +1,8 @@
 import setuptools
 
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 setuptools.setup(
     name="cybereason",
     version="1.0",
@@ -8,7 +11,7 @@ setuptools.setup(
     description="Cybereason API to Cognito Detect API integration",
     url="https://github.com/vectranetworks/cybereason",
     packages=setuptools.find_packages(),
-    install_requires=['vectra-api-tools', 'requests', 'validators'],
+    install_requires=required,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
