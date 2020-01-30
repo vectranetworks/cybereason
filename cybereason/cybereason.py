@@ -10,6 +10,7 @@ import re
 import getpass
 from datetime import datetime
 import pickle
+import os
 
 try:
     import requests
@@ -40,7 +41,8 @@ def validate_config(func):
         if bool(validators.url(COGNITO_BRAIN) and validators.url(BASE_URL)):
             return func()
         else:
-            raise Exception('Ensure config.py has valid Cybereason and Vectra config')
+            print(os.path.abspath('config.py'))
+            raise Exception('Ensure config.py has valid Cybereason and Vectra config sections')
 
     return config_validator
 
