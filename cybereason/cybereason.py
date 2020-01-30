@@ -17,7 +17,6 @@ try:
     import validators
     import vat.vectra as vectra
     from .config import COGNITO_BRAIN, COGNITO_TOKEN, SERVER, PORT, ABSOLUTE_PATH
-    import .config
 except Exception as error:
     print("\nMissing import requirements: %s\n" % str(error))
 
