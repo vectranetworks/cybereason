@@ -42,7 +42,7 @@ def validate_config(func):
             return func()
         else:
             print('Ensure config.py has valid Cybereason and Vectra config sections')
-            print(os.getced())
+            print(os.getcwd())
             exit()
 
     return config_validator
