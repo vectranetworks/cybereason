@@ -189,7 +189,7 @@ def poll_vectra(tag=None, tc=None):
             host_dict.update({host['id']: host['last_source']})
     if tc:
         #  t, c = args.tc.split()
-        t, c = args.tc[0], args.tc[1]
+        t, c = tc[0], tc[1]
         tc_hosts = VC.get_hosts(state='active', threat_gte=int(t), certainty_gte=int(c)).json()['results']
         for host in tc_hosts:
             host_dict.update({host['id']: host['last_source']})
