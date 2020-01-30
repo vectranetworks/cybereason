@@ -11,6 +11,7 @@ import getpass
 from datetime import datetime
 import pickle
 import os
+import sys
 
 try:
     import requests
