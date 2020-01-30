@@ -227,8 +227,8 @@ def main():
     logging.basicConfig(level=logging.INFO)
 
     #  Update syslog device accordingly for operating system for local logging
-    #  handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
-    handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
+    handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
+    #  handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
