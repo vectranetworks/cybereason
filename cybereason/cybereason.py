@@ -205,8 +205,40 @@ def gen_token():
         pickle.dump(session.cookies, outfile)
 
 
+def obtain_args():
+    parser = argparse.ArgumentParser(description='Poll Cognito for tagged hosts, extracts Cybereason contextual '
+                                                 'information.  Block or unblock hosts per tags',
+                                     prefix_chars='--', formatter_class=argparse.RawTextHelpFormatter,
+                                     epilog='')
+    parser.add_argument('--token', action='store_true', help='Generate Cybereason API token.  Prompts for credentials.')
+    parser.add_argument('--tc', type=int, nargs=2, default=False,
+                        help='Poll for hosts with threat and certainty scores >=, eg --tc 50 50')
+    parser.add_argument('--tag', type=str, nargs=1, default=False, help='Enrichment host tag to search for')
+    parser.add_argument('--blocktag', type=str, nargs=1, default=False, help='Block hosts with this tag')
+    parser.add_argument('--unblocktag', type=str, nargs=1, default=False, help='Unblock hosts with this tag')
+
+    return parser.parse_args()
+
+
 @validate_config
 def main():
+    syslog_logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
+
+    #  Update syslog device accordingly for operating system for local logging
+    #  handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
+    handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    syslog_logger.addHandler(handler)
+
+    args = obtain_args()
+
+    if not args:
+        print('Run cybereason -h for help.')
+        exit()
+
     if args.token:
         gen_token()
 
@@ -240,27 +272,5 @@ def main():
 
 
 if __name__ == '__main__':
-    syslog_logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.INFO)
-
-    #  Update syslog device accordingly for operating system for local logging
-    #  handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
-    handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    syslog_logger.addHandler(handler)
-
-    parser = argparse.ArgumentParser(description='Poll Cognito for tagged hosts, extracts Cybereason contextual '
-                                                 'information.  Block or unblock hosts per tags',
-                                     prefix_chars='--', formatter_class=argparse.RawTextHelpFormatter,
-                                     epilog='')
-    parser.add_argument('--token', action='store_true', help='Generate Cybereason API token.  Prompts for credentials.')
-    parser.add_argument('--tc', type=int, nargs=2, default=False,
-                        help='Poll for hosts with threat and certainty scores >=, eg --tc 50 50')
-    parser.add_argument('--tag', type=str, nargs=1, default=False, help='Enrichment host tag to search for')
-    parser.add_argument('--blocktag', type=str, nargs=1, default=False, help='Block hosts with this tag')
-    parser.add_argument('--unblocktag', type=str, nargs=1, default=False, help='Unblock hosts with this tag')
-    args = parser.parse_args()
 
     main()

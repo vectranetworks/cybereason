@@ -29,12 +29,12 @@ Or Install directly from github utilizing pip3:
 pip3 install git+https://github.com/vectranetworks/cybereason.git
 ```
 
-##Configuration
+## Configuration
 Edit the config.py file and adjust the required variables according to your environment.  A local install will typically
- install in the following path ***~/.local/lib/\<python\>/site-packages/cybereason***  Running the script without a 
+ install in the following path ***~/.local/lib/\<python\>/site-packages/cybereason***.  Running the script without a 
  valid config in config.py will throw an exception which indicates the full path to the script and config.py file.
 
-##Initialization
+## Initialization
 Run the script one time manually with --token flag to generate Cybereason token.
 
 ```
