@@ -36,6 +36,18 @@ VC = vectra.VectraClient(COGNITO_BRAIN, token=COGNITO_TOKEN)
 # Suppress Detect certificate warning
 requests.packages.urllib3.disable_warnings()
 
+# Setup logging
+syslog_logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+#  Update syslog device accordingly for operating system for local logging
+handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
+#  handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+syslog_logger.addHandler(handler)
+
 
 def validate_config(func):
     def config_validator():
@@ -263,15 +275,5 @@ def main():
 
 
 if __name__ == '__main__':
-    syslog_logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.INFO)
 
-    #  Update syslog device accordingly for operating system for local logging
-    handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
-    #  handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    syslog_logger.addHandler(handler)
-    
     main()
