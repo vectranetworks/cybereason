@@ -8,6 +8,3 @@ PORT = '8443'
 COGNITO_BRAIN = 'https://<cognito.example.com>'
 COGNITO_TOKEN = '<cognito detect api token>'
 
-
-# Environment path to directory containing cybereason script.  Required to support cron jobs
-ABSOLUTE_PATH = '/<path>/cybereason/'

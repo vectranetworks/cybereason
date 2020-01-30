@@ -16,7 +16,7 @@ try:
     import requests
     import validators
     import vat.vectra as vectra
-    from .config import COGNITO_BRAIN, COGNITO_TOKEN, SERVER, PORT, ABSOLUTE_PATH
+    from .config import COGNITO_BRAIN, COGNITO_TOKEN, SERVER, PORT
 except Exception as error:
     print("\nMissing import requirements: %s\n" % str(error))
 
@@ -52,7 +52,7 @@ def query_cr(url, query_json, method):
     # Establish session and import auth cookie
     session = requests.session()
 
-    with open(ABSOLUTE_PATH + 'cr_cookie', 'rb') as infile:
+    with open(os.path.dirname(__file__) + 'cr_cookie', 'rb') as infile:
         session.cookies.update(pickle.load(infile))
 
     api_headers = {'Content-Type': 'application/json'}
@@ -197,11 +197,11 @@ def gen_token():
     login_url = BASE_URL + "/login.html"
 
     session = requests.session()
-    response = session.post(login_url, data=data, verify=True)
+    response = session.post(login_url, headers=headers, data=data, verify=True)
 
     syslog_logger.info('Requesting Cybereason API toke.  Response: {}'.format(response.status_code))
 
-    with open('cr_cookie', 'wb') as outfile:
+    with open(os.path.dirname(__file__) + 'cr_cookie', 'wb') as outfile:
         pickle.dump(session.cookies, outfile)
 
 

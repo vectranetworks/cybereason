@@ -29,15 +29,19 @@ Or Install directly from github utilizing pip3:
 pip3 install git+https://github.com/vectranetworks/cybereason.git
 ```
 
-Edit the config.py file and adjust the required variables according to your environment.
+##Configuration
+Edit the config.py file and adjust the required variables according to your environment.  A local install will typically
+ install in the following path ***~/.local/lib/\<python\>/site-packages/cybereason***  Running the script without a 
+ valid config in config.py will throw an exception which indicates the full path to the script and config.py file.
 
+##Initialization
 Run the script one time manually with --token flag to generate Cybereason token.
 
 ```
-python3 cybereason.py --token
+cybereason --token
 ```
-The script will prompt for Cybereason credentials.  The Cybereason token auto-renews.  Regenerating the token may be
-required if 8+ hours have elapsed since it was last utilized.
+The script will prompt for Cybereason credentials.  The Cybereason token auto-renews every time the API is accessed.  
+Regenerating the token may be required if 8+ hours have elapsed since it was last utilized.
 
 ## Running
 
@@ -45,8 +49,8 @@ When ran, the script needs to be supplied one or more parameters.  Examples:
 
 
 ```
-python3 cybereason.py --tag host_context
-python3 cybereason.py --tag host_context --tc 75 75
+cybereason --tag host_context
+cybereason --tag host_context --tc 75 75
 ```
 
 The --tag flag will query Detect for active hosts that have the specified tag (host_context in this example), 
@@ -57,7 +61,7 @@ be combined.
 
 ### Typical Usage
 ```
-python3 cybereason.py --tag host_context --tc 75 75 --blocktag block --unblocktag unblock
+cybereason.py --tag host_context --tc 75 75 --blocktag block --unblocktag unblock
 ```
 Specifying multiple flags allows the integration to cover multiple use cases. 
 
@@ -68,7 +72,7 @@ is designed to be called via a cron job.
  
 ## Help Output
 
-usage: cybereason.py [-h] [--token] [--tc TC TC] [--tag TAG]
+usage: cybereason [-h] [--token] [--tc TC TC] [--tag TAG]
                      [--blocktag BLOCKTAG] [--unblocktag UNBLOCKTAG]
 
 Poll Cognito for tagged hosts, extracts Cybereason contextual information.  Block or unblock hosts per tags
