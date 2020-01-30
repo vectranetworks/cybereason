@@ -223,16 +223,6 @@ def obtain_args():
 
 @validate_config
 def main():
-    syslog_logger = logging.getLogger(__name__)
-    logging.basicConfig(level=logging.INFO)
-
-    #  Update syslog device accordingly for operating system for local logging
-    handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
-    #  handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
-
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    syslog_logger.addHandler(handler)
 
     args = obtain_args()
 
@@ -273,5 +263,15 @@ def main():
 
 
 if __name__ == '__main__':
+    syslog_logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.INFO)
 
+    #  Update syslog device accordingly for operating system for local logging
+    handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
+    #  handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    syslog_logger.addHandler(handler)
+    
     main()
