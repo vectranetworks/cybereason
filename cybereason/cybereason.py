@@ -41,8 +41,8 @@ def validate_config(func):
         if bool(validators.url(COGNITO_BRAIN) and validators.url(BASE_URL)):
             return func()
         else:
-            print(os.path.abspath('config.py'))
-            raise Exception('Ensure config.py has valid Cybereason and Vectra config sections')
+            full_path = os.path.abspath('config.py'))
+            raise Exception('Ensure config.py has valid Cybereason and Vectra config sections ({})'.format(full_path))
 
     return config_validator
 
