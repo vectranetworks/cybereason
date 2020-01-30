@@ -235,7 +235,7 @@ def main():
 
     args = obtain_args()
 
-    if args.length is None:
+    if len(sys.argv) == 1:
         print('Run cybereason -h for help.')
         sys.exit()
 
