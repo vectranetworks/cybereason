@@ -235,9 +235,9 @@ def main():
 
     args = obtain_args()
 
-    if not args:
+    if args.input is None and args.length is None:
         print('Run cybereason -h for help.')
-        exit()
+        sys.exit()
 
     if args.token:
         gen_token()
