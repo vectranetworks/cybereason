@@ -220,7 +220,7 @@ def obtain_args():
     parser.add_argument('--tag', type=str, nargs=1, default=False, help='Enrichment host tag to search for')
     parser.add_argument('--blocktag', type=str, nargs=1, default=False, help='Block hosts with this tag')
     parser.add_argument('--unblocktag', type=str, nargs=1, default=False, help='Unblock hosts with this tag')
-    parser.add_argument('--verbose', type=bool, default=False, action='store_true', help='Verbose logging')
+    parser.add_argument('--verbose', default=False, action='store_true', help='Verbose logging')
 
     return parser.parse_args()
 
