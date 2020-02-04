@@ -63,7 +63,7 @@ be combined.
 
 ### Typical Usage
 ```
-cybereason.py --tag host_context --tc 75 75 --blocktag block --unblocktag unblock
+cybereason --tag host_context --tc 75 75 --blocktag block --unblocktag unblock
 ```
 Specifying multiple flags allows the integration to cover multiple use cases. 
 
