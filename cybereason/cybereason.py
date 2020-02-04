@@ -37,16 +37,7 @@ VC = vectra.VectraClient(COGNITO_BRAIN, token=COGNITO_TOKEN)
 requests.packages.urllib3.disable_warnings()
 
 # Setup logging
-syslog_logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-#  Update syslog device accordingly for operating system for local logging
-handler = logging.handlers.SysLogHandler(address='/dev/log')  # typical for Linux
-#  handler = logging.handlers.SysLogHandler(address='/var/run/syslog')  # typical for OS X
-
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-syslog_logger.addHandler(handler)
+LOG = logging.getLogger(__name__)
 
 
 def validate_config(func):
@@ -88,7 +79,7 @@ def query_cr(url, query_json, method):
         return None
 
     else:
-        syslog_logger.info('Possible authentication error/stale cookie/un-handled condition')
+        LOG.info('Possible authentication error/stale cookie/un-handled condition')
         exit()
 
 
@@ -126,17 +117,17 @@ def gen_sensor_tags(sensor_dict, hostid):
     if len(sensor_dict):
 
         if sensor_dict['totalResults'] == 0:
-            syslog_logger.debug('Length of sensor_dict = 0')
+            LOG.debug('Length of sensor_dict = 0')
             tag_list.append('CR_NoAgent')
 
         elif sensor_dict['totalResults'] == 1:
-            syslog_logger.debug('Length of sensor_dict = 1')
+            LOG.debug('Length of sensor_dict = 1')
             for item in sensor_attrib:
                 tag_list.append('{it}: {val}'.format(it=item, val=sensor_dict['sensors'][0][item]))
         else:
             # find most viable sensor candidate
             sensor_list = sensor_dict['sensors']
-            syslog_logger.debug('Length of sensor_list:{}'.format(len(sensor_list)))
+            LOG.debug('Length of sensor_list:{}'.format(len(sensor_list)))
 
             index = next((i for i, x in enumerate(sensor_list) if x['status'] == 'Online'), None)
             if index:
@@ -166,7 +157,7 @@ def create_isolation_by_ip(ip):
         "direction": "ALL"
     }
     results = query_cr(BASE_URL + SENSOR_ISOLATION_URI, isolation, 'POST')
-    syslog_logger.info('Created isolation rule:{}'.format(results))
+    LOG.info('Created isolation rule:{}'.format(results))
 
 
 def delete_isolation_by_ip(ip):
@@ -174,10 +165,10 @@ def delete_isolation_by_ip(ip):
     delete_list = query_isolation_by_ip(ip)
     if len(delete_list):
         for rule in delete_list:
-            syslog_logger.info('Deleting isolation rule:{}'.format(rule))
+            LOG.info('Deleting isolation rule:{}'.format(rule))
             query_cr(BASE_URL + SENSOR_ISOLATION_DELETE_URI, rule, 'POST')
     else:
-        syslog_logger.info('No isolation rule found to delete for IP:{}'.format(ip))
+        LOG.info('No isolation rule found to delete for IP:{}'.format(ip))
 
 
 def poll_vectra(tag=None, tc=None):
@@ -212,7 +203,7 @@ def gen_token():
     session = requests.session()
     response = session.post(login_url, headers=headers, data=data, verify=True)
 
-    syslog_logger.info('Requesting Cybereason API toke.  Response: {}'.format(response.status_code))
+    LOG.info('Requesting Cybereason API toke.  Response: {}'.format(response.status_code))
 
     with open(os.path.dirname(__file__) + 'cr_cookie', 'wb') as outfile:
         pickle.dump(session.cookies, outfile)
@@ -238,6 +229,9 @@ def main():
 
     args = obtain_args()
 
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
     if len(sys.argv) == 1:
         print('Run cybereason -h for help.')
         sys.exit()
@@ -249,7 +243,7 @@ def main():
         if args.blocktag:
             hosts = poll_vectra(args.blocktag)
             for hostid in hosts.keys():
-                syslog_logger.debug('Requesting isolation rule for IP: {}'.format(hosts[hostid]))
+                LOG.debug('Requesting isolation rule for IP: {}'.format(hosts[hostid]))
                 create_isolation_by_ip(hosts[hostid])
                 tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
                 tag_list.append('Manual block:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
@@ -258,7 +252,7 @@ def main():
         if args.unblocktag:
             hosts = poll_vectra(args.unblocktag)
             for hostid in hosts.keys():
-                syslog_logger.debug('Requesting isolation rule deletion for IP: {}'.format(hosts[hostid]))
+                LOG.debug('Requesting isolation rule deletion for IP: {}'.format(hosts[hostid]))
                 delete_isolation_by_ip(hosts[hostid])
                 tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
                 tag_list.append('Manual unblock:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
@@ -268,7 +262,7 @@ def main():
         hosts = poll_vectra(args.tag, args.tc)
 
         for hostid in hosts.keys():
-            syslog_logger.info('Pulling enrichment tags for hostid:IP {}:{}'.format(hostid, hosts[hostid]))
+            LOG.info('Pulling enrichment tags for hostid:IP {}:{}'.format(hostid, hosts[hostid]))
             tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
 
             VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
