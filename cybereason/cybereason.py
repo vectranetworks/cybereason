@@ -138,7 +138,7 @@ def gen_sensor_tags(sensor_dict, hostid):
 
     else:
         tag_list.append('CR_NoAgent')
-    print('tag_list:{}'.format(tag_list))
+    
     return tag_list
 
 
