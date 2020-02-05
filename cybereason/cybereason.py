@@ -107,10 +107,10 @@ def gen_sensor_tags(sensor_dict, hostid):
     # Pull host's tags
     host_tags = VC.get_host_tags(host_id=hostid).json()['tags']
 
-    print('Host tags:{}'.format(host_tags))
+    LOG.debug('Host tags:{}'.format(host_tags))
 
     tag_list = [t for t in host_tags if re.search('^Manual\s[un]*block:.*', t)]
-    print('tag_list pre CR:{}'.format(tag_list))
+    LOG.debug('tag_list pre CR:{}'.format(tag_list))
     # Define CR attributes interested in
     sensor_attrib = ['machineName', 'siteName', 'department', 'location', 'isolated', 'status',
                      'osType', 'osVersionType']

@@ -87,6 +87,7 @@ optional arguments:
   --blocktag BLOCKTAG   Block hosts with this tag
   --unblocktag UNBLOCKTAG
                         Unblock hosts with this tag
+  --verbose             Verbose logging
 
 
 ## Authors
