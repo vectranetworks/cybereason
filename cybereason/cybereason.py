@@ -27,8 +27,8 @@ BASE_URL = "https://" + SERVER + ":" + PORT
 # Cybereason Request URIs
 ENDPOINT_URI = '/rest/visualsearch/query/simple'
 SENSOR_URI = '/rest/sensors/query'
-SENSOR_ISOLATION_URI = '/rest/settings/isolation-rule'
-SENSOR_ISOLATION_DELETE_URI = SENSOR_ISOLATION_URI + '/delete'
+SENSOR_ISOLATION_URI = '/rest/monitor/global/commands/isolate'
+SENSOR_ISOLATION_DELETE_URI  = '/rest/monitor/global/commands/un-isolate'
 
 # Setup Vectra client
 VC = vectra.VectraClient(COGNITO_BRAIN, token=COGNITO_TOKEN)
@@ -63,6 +63,8 @@ def query_cr(url, query_json, method):
 
     query = json.dumps(query_json)
 
+    LOG.debug(query)
+
     api_response = session.request(method, url, data=query, headers=api_headers)
 
     if api_response.status_code == 200 and not (re.search('<title>Cybereason \| Login</title>', api_response.text)):
@@ -94,6 +96,35 @@ def query_sensor_by_ip(ip):
                 "operator": "Equals",
                 "values": [ip]
 
+            }
+        ]
+    }
+    results_dict = query_cr(BASE_URL + SENSOR_URI, ip_query, 'POST')
+
+    return results_dict
+
+
+def query_online_sensor_by_ip(ip):
+    """ 
+    Query for sensors per IP with online status.
+    :param ip: ip address of the target machine
+    :return: return a dictionary with the matching sensors
+    """
+
+    ip_query = {
+        "limit": 500,
+        "offset": 0,
+        "filters": [
+            {
+                "fieldName": "internalIpAddress",
+                "operator": "Equals",
+                "values": [ip]
+
+            },
+            {
+                "fieldName": "status",
+                "operator": "Equals",
+                "values": ["Online"]
             }
         ]
     }
@@ -148,27 +179,32 @@ def query_isolation_by_ip(ip):
     return [r for r in isolation_rule_full_list if r['ipAddressString'] == ip]
 
 
-def create_isolation_by_ip(ip):
-    # Creates an isolation rule based on IP and logs attempt
-    isolation = {
-        "ipAddressString": ip,
-        "port": "443",
-        "blocking": "true",
-        "direction": "ALL"
+def create_isolation_by_pylumid(pylumid):
+    """
+    Isolate a host based on its sensor pylum ID
+    param plyumid: The sensor pylum ID
+    """
+
+    isolation  = { 
+        "pylumIds":[pylumid],
+        "malopId": "" 
     }
+    
     results = query_cr(BASE_URL + SENSOR_ISOLATION_URI, isolation, 'POST')
-    LOG.info('Created isolation rule:{}'.format(results))
+    LOG.info(f"Isolate host: {results}")
 
-
-def delete_isolation_by_ip(ip):
-    # Deletes isolation rule(s) based on IP and logs attempt(s)
-    delete_list = query_isolation_by_ip(ip)
-    if len(delete_list):
-        for rule in delete_list:
-            LOG.info('Deleting isolation rule:{}'.format(rule))
-            query_cr(BASE_URL + SENSOR_ISOLATION_DELETE_URI, rule, 'POST')
-    else:
-        LOG.info('No isolation rule found to delete for IP:{}'.format(ip))
+def delete_isolation_by_pylumid(pylumid):
+    """
+    Delete an isolation rule based on the sensor pylum ID.
+    :param plyumid: The sensor pylum ID
+    """
+    isolation  = { 
+        "pylumIds":[pylumid],
+        "malopId": "" 
+    }
+    
+    results = query_cr(BASE_URL + SENSOR_ISOLATION_DELETE_URI, isolation, 'POST')
+    LOG.info(f"Un-isolate host: {results}")
 
 
 def poll_vectra(tag=None, tc=None):
@@ -198,15 +234,21 @@ def gen_token():
         "password": passw
     }
 
+
     login_url = BASE_URL + "/login.html"
 
     session = requests.session()
     response = session.post(login_url, headers=headers, data=data, verify=True)
 
-    LOG.info('Requesting Cybereason API toke.  Response: {}'.format(response.status_code))
+    LOG.info('Requesting Cybereason API token.  Response: {}'.format(response.status_code))
 
     with open(os.path.dirname(__file__) + 'cr_cookie', 'wb') as outfile:
         pickle.dump(session.cookies, outfile)
+
+
+    return session
+
+
 
 
 def obtain_args():
@@ -244,20 +286,31 @@ def main():
         if args.blocktag:
             hosts = poll_vectra(args.blocktag)
             for hostid in hosts.keys():
+                LOG.debug(hosts[hostid])
                 LOG.debug('Requesting isolation rule for IP: {}'.format(hosts[hostid]))
-                create_isolation_by_ip(hosts[hostid])
-                tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
-                tag_list.append('Manual block:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
-                VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
+                sensor_list = query_online_sensor_by_ip(hosts[hostid])['sensors']
+                LOG.debug(sensor_list)
+                LOG.debug('Number of Sensors: {}'.format(len(sensor_list)))
+                for sensor in sensor_list:
+                    LOG.info(f"[ISOLATE] Hostnane: {sensor['machineName']} - Sensor pylum ID : "+sensor['pylumId'])
+                    create_isolation_by_pylumid(sensor['pylumId'])
+                    tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
+                    tag_list.append('Manual block:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
+                    VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
 
         if args.unblocktag:
             hosts = poll_vectra(args.unblocktag)
             for hostid in hosts.keys():
                 LOG.debug('Requesting isolation rule deletion for IP: {}'.format(hosts[hostid]))
-                delete_isolation_by_ip(hosts[hostid])
-                tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
-                tag_list.append('Manual unblock:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
-                VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
+                sensor_list = query_online_sensor_by_ip(hosts[hostid])['sensors']
+                LOG.debug(sensor_list)
+                LOG.debug('Number of Sensors: {}'.format(len(sensor_list)))
+                for sensor in sensor_list:
+                    LOG.info(f"[UN-ISOLATE] Hostnane: {sensor['machineName']} - Sensor pylum ID : "+sensor['pylumId'])
+                    delete_isolation_by_pylumid(sensor['pylumId'])
+                    tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
+                    tag_list.append('Manual unblock:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
+                    VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
 
         # Pull hosts with tags and/or threat and certainty scores
         hosts = poll_vectra(args.tag, args.tc)
