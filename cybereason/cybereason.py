@@ -95,7 +95,11 @@ def query_sensor_by_ip(ip):
                 "fieldName": "internalIpAddress",
                 "operator": "Equals",
                 "values": [ip]
-
+            },
+	        {
+		        "fieldName": "status",
+                "operator": "NotEquals",
+                "values": ["Archived","Stale"]
             }
         ]
     }
